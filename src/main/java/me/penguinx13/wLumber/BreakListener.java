@@ -1,6 +1,7 @@
 package me.penguinx13.wLumber;
 
 import me.penguinx13.wLumber.tree.Tree;
+import me.penguinx13.wapi.Managers.MessageManager;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -47,6 +48,7 @@ public class BreakListener implements Listener {
 
         if (currentBreaks < requiredBreaks) {
             breakProgress.put(key, currentBreaks);
+            MessageManager.sendMessage(player, "{action}&e" + currentBreaks + "&f/&6" + requiredBreaks);
             event.setCancelled(true);
             return;
         }
@@ -59,7 +61,7 @@ public class BreakListener implements Listener {
         for (Block log : tree.getLogs()) {
             log.breakNaturally(tool);
         }
-
+        MessageManager.sendMessage(player, "{action}&6" + requiredBreaks);
         Collection<Block> leaves = tree.getLeaves();
         new LeafDecayTask(leaves).runTaskTimer(plugin, 1L, 1L);
     }
