@@ -10,12 +10,16 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class BreakListener implements Listener {
     private final WLumber plugin;
+    private final Map<BreakProgressKey, Integer> breakProgress = new HashMap<>();
 
-    public BreakListener (WLumber plugin){
-       this.plugin = plugin;
+    public BreakListener(WLumber plugin) {
+        this.plugin = plugin;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -23,23 +27,47 @@ public class BreakListener implements Listener {
         Block block = event.getBlock();
         Player player = event.getPlayer();
 
-        if (!Tag.LOGS.isTagged(block.getType())) return;
+        if (!Tag.LOGS.isTagged(block.getType())) {
+            return;
+        }
 
         Tree tree = new Tree(block);
-        if (!tree.collect()) return;
+        if (!tree.collect()) {
+            return;
+        }
+
+        BreakProgressKey key = BreakProgressKey.of(player.getUniqueId(), block);
+        int requiredBreaks = tree.getLogs().size();
+        int currentBreaks = breakProgress.getOrDefault(key, 0) + 1;
+
+        if (currentBreaks < requiredBreaks) {
+            breakProgress.put(key, currentBreaks);
+            event.setCancelled(true);
+            return;
+        }
+
+        breakProgress.remove(key);
+        event.setCancelled(true);
 
         ItemStack tool = player.getInventory().getItemInMainHand();
-
-        event.setDropItems(false);
 
         for (Block log : tree.getLogs()) {
             log.breakNaturally(tool);
         }
+
         Collection<Block> leaves = tree.getLeaves();
+        new LeafDecayTask(leaves).runTaskTimer(plugin, 1L, 1L);
+    }
 
-        new LeafDecayTask(leaves)
-                .runTaskTimer(plugin, 1L, 1L);
-
-
+    private record BreakProgressKey(UUID playerId, String world, int x, int y, int z) {
+        private static BreakProgressKey of(UUID playerId, Block block) {
+            return new BreakProgressKey(
+                    playerId,
+                    block.getWorld().getName(),
+                    block.getX(),
+                    block.getY(),
+                    block.getZ()
+            );
+        }
     }
 }
