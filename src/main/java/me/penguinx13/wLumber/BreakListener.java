@@ -31,12 +31,17 @@ public class BreakListener implements Listener {
             return;
         }
 
+        BreakProgressKey key = BreakProgressKey.of(player.getUniqueId(), block);
+        if (player.isSneaking()) {
+            breakProgress.remove(key);
+            return;
+        }
+
         Tree tree = new Tree(block);
         if (!tree.collect()) {
             return;
         }
 
-        BreakProgressKey key = BreakProgressKey.of(player.getUniqueId(), block);
         int requiredBreaks = tree.getLogs().size();
         int currentBreaks = breakProgress.getOrDefault(key, 0) + 1;
 
