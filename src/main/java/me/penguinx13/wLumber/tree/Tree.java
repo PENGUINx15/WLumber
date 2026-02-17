@@ -28,7 +28,7 @@ public class Tree {
         collectLogs();
         collectLeaves();
 
-        return !logs.isEmpty();
+        return !logs.isEmpty() && !leaves.isEmpty();
     }
 
     private void collectLogs() {
